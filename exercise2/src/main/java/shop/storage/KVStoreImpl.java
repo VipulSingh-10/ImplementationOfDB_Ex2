@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 // TODO: Task 2.2 b)
 public class KVStoreImpl implements CustomerStore, CustomerStoreQuery {
@@ -35,14 +36,13 @@ public class KVStoreImpl implements CustomerStore, CustomerStoreQuery {
         throw new IllegalArgumentException("Record Manager isnt open yet");
         }
 
-        try{
-            CustomersMap.put(customer.getCustomerId(), customer);
-            recordManager.commit();
-            //initially for testing - will delete later
-            System.out.println("Customer " + customer.getCustomerId() + " has been inserted");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        CustomersMap.put(customer.getCustomerId(), customer);
+
+        //initially for testing - will delete later
+        //System.out.println("Customer " + customer.getCustomerId() + " has been inserted");
+    }
+    public void commitchanges() throws IOException {
+        recordManager.commit();
     }
 
     @Override
@@ -114,32 +114,42 @@ public class KVStoreImpl implements CustomerStore, CustomerStoreQuery {
     @Override
 
     public void queryTopProduct() {
-        HashMap<Product, Integer> ProductCountHashmap = new HashMap<>();
-        if (CustomersMap != null) {
-            CustomersMap.forEach((key, customer) -> {
-                List<Order> customerOrderList = customer.getOrders();
-                for (Order order : customerOrderList) {
-                    List<Product> productList = order.getItems();
-                    for (Product product : productList) {
-                        ProductCountHashmap.put(product, ProductCountHashmap.getOrDefault(product, 0) + 1);
-                    }
-                }
-            });
+        if (CustomersMap == null || CustomersMap.isEmpty()) {
+            System.out.println("No customer data available to query.");
+            return;
         }
-        Product topProduct = null;
+
+        Map<Integer, Integer> productCountMap = new HashMap<>();
+        Map<Integer, String> productNamesMap = new HashMap<>();
+
+
+        CustomersMap.forEach((key, customer) -> {
+            List<Order> orders = customer.getOrders();
+            for (Order order : orders) {
+                for (Product product : order.getItems()) {
+                    int productId = product.getProductId();
+                    productCountMap.put(productId, productCountMap.getOrDefault(productId, 0) + 1);
+                    productNamesMap.putIfAbsent(productId, product.getName());
+                }
+            }
+        });
+
+        int topProductId = -1;
         int maxCount = 0;
 
-        for (Product product : ProductCountHashmap.keySet()) {
-            int count = ProductCountHashmap.get(product);
-            if (count > maxCount) {
-                maxCount = count;
-                topProduct = product;
+        for (Map.Entry<Integer, Integer> entry : productCountMap.entrySet()) {
+            if (entry.getValue() > maxCount) {
+                topProductId = entry.getKey();
+                maxCount = entry.getValue();
             }
         }
 
-
-        System.out.println("Top product: " + topProduct.getName() + " with " + maxCount + " orders.");
-
+        if (topProductId != -1) {
+            String topProductName = productNamesMap.get(topProductId);
+            System.out.println("Top product: " + topProductName + " with " + maxCount + " orders.");
+        } else {
+            System.out.println("No products found.");
+        }
     }
 
 }
