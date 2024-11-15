@@ -7,6 +7,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+
+
+//KVStoreImpl is faster than H2StoreImpl because it uses a simpler, lightweight system that focuses on quick storage without extra overhead.
+
+//H2StoreImpl is slower because it’s a full relational database, which handles more complex tasks like managing table rules and transactions, making it take more time for each insertion.
+//This aligns with the results where KVStoreImpl took 1462 ms, significantly faster than H2StoreImpl's 4198 ms.
+
+
 public class StorePerformanceTest {
 
     public static void main(String[] args) throws IOException {
@@ -47,14 +55,15 @@ public class StorePerformanceTest {
 
         //clean and close db
         kvStore.close();
-        //kvStore.cleanUp();
+
 
 
         h2Store.close();
-        //h2Store.cleanUp();
+
 
         System.out.println("Performance Results:");
         System.out.println("KVStoreImpl time: " + (endKVStore - startKVStore) + " ms");
         System.out.println("H2StoreImpl time: " + (endH2Store - startH2Store) + " ms");
+
     }
 }
